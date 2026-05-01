@@ -1,4 +1,7 @@
-const BASE_URL = 'http://10.0.2.2:8080/api';
+const BASE_URL =
+  typeof window !== 'undefined'
+    ? 'http://localhost:8080/api'
+    : 'http://10.0.2.2:8080/api';
 
 async function request(path, options = {}) {
   const response = await fetch(`${BASE_URL}${path}`, {
