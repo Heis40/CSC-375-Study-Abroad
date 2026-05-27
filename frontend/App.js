@@ -395,9 +395,30 @@ export default function App() {
   const [farmId, setFarmId] = useState(null);
   const [lastFieldId, setLastFieldId] = useState(null);
 
+  const logout = (navigation) => {
+    setSession(null);
+    setFarmId(null);
+    setLastFieldId(null);
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Auth' }],
+    });
+  };
+
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Auth">
+      <Stack.Navigator
+        initialRouteName="Auth"
+        screenOptions={({ navigation, route }) => ({
+          headerRight: route.name === 'Auth'
+            ? undefined
+            : () => (
+              <TouchableOpacity style={styles.headerLogoutButton} onPress={() => logout(navigation)}>
+                <Text style={styles.headerLogoutText}>Log Out</Text>
+              </TouchableOpacity>
+            ),
+        })}
+      >
         <Stack.Screen name="Auth" options={{ headerShown: false }}>
           {(props) => <AuthScreen {...props} setSession={setSession} />}
         </Stack.Screen>
@@ -510,5 +531,16 @@ const styles = StyleSheet.create({
   smallText: {
     fontSize: 12,
     color: '#64748b',
+  },
+  headerLogoutButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#ecfccb',
+  },
+  headerLogoutText: {
+    color: '#365314',
+    fontWeight: '700',
+    fontSize: 12,
   },
 });
