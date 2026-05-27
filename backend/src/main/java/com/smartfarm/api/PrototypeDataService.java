@@ -13,6 +13,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * In-memory data service backing the SmartFarm prototype API.
+ *
+ * <p>This service intentionally avoids persistent storage so the demo can run with zero database setup.</p>
+ */
 @Service
 public class PrototypeDataService {
     private final AtomicLong idGenerator = new AtomicLong(1);
@@ -32,6 +37,12 @@ public class PrototypeDataService {
         seedPrograms();
     }
 
+    /**
+     * Registers a new farmer account and returns a mock authentication token.
+     *
+     * @param request signup payload
+     * @return authenticated farmer response
+     */
     public AuthResponse signup(SignupRequest request) {
         Optional<Farmer> existing = farmers.values().stream()
                 .filter(f -> f.email().equalsIgnoreCase(request.email()))
@@ -48,6 +59,12 @@ public class PrototypeDataService {
         return new AuthResponse(farmer.id(), farmer.fullName(), token);
     }
 
+    /**
+     * Validates farmer credentials and returns a mock authentication token.
+     *
+     * @param request login payload
+     * @return authenticated farmer response
+     */
     public AuthResponse login(LoginRequest request) {
         Farmer farmer = farmers.values().stream()
                 .filter(f -> f.email().equalsIgnoreCase(request.email()) && f.password().equals(request.password()))
@@ -56,6 +73,12 @@ public class PrototypeDataService {
         return new AuthResponse(farmer.id(), farmer.fullName(), buildMockToken(farmer));
     }
 
+    /**
+     * Creates a farm for an existing farmer.
+     *
+     * @param request farm creation payload
+     * @return created farm
+     */
     public Farm createFarm(CreateFarmRequest request) {
         if (!farmers.containsKey(request.farmerId())) {
             throw new IllegalArgumentException("Farmer not found");
@@ -66,6 +89,12 @@ public class PrototypeDataService {
         return farm;
     }
 
+    /**
+     * Creates a field and seeds baseline records used by downstream workflow screens.
+     *
+     * @param request field creation payload
+     * @return created field
+     */
     public Field createField(CreateFieldRequest request) {
         if (!farms.containsKey(request.farmId())) {
             throw new IllegalArgumentException("Farm not found");
@@ -90,6 +119,12 @@ public class PrototypeDataService {
         return field;
     }
 
+    /**
+     * Adds livestock metrics for an existing farm.
+     *
+     * @param request livestock payload
+     * @return created livestock record
+     */
     public Livestock addLivestock(AddLivestockRequest request) {
         if (!farms.containsKey(request.farmId())) {
             throw new IllegalArgumentException("Farm not found");
@@ -99,10 +134,22 @@ public class PrototypeDataService {
         return item;
     }
 
+    /**
+     * Fetches all fields belonging to a farm.
+     *
+     * @param farmId farm identifier
+     * @return farm fields
+     */
     public List<Field> getFieldsByFarm(Long farmId) {
         return fields.values().stream().filter(f -> f.farmId().equals(farmId)).toList();
     }
 
+    /**
+     * Aggregates dashboard metrics from monitoring, soil, livestock, and field data.
+     *
+     * @param farmId farm identifier
+     * @return dashboard response model
+     */
     public DashboardResponse getDashboard(Long farmId) {
         List<Field> farmFields = getFieldsByFarm(farmId);
         if (farmFields.isEmpty()) {
@@ -134,6 +181,12 @@ public class PrototypeDataService {
         return new DashboardResponse(avgNdvi, soilStatus, balance, farmFields.size());
     }
 
+    /**
+     * Builds rule-based recommendations from farm area and field land-use composition.
+     *
+     * @param farmId farm identifier
+     * @return recommendation payload
+     */
     public RecommendationResponse getRecommendations(Long farmId) {
         List<Field> farmFields = getFieldsByFarm(farmId);
         double totalArea = farmFields.stream().mapToDouble(Field::areaHa).sum();
@@ -156,6 +209,12 @@ public class PrototypeDataService {
         return new RecommendationResponse(crop, grazing);
     }
 
+    /**
+     * Returns monitoring points for a field and seeds sample data if none exists yet.
+     *
+     * @param fieldId field identifier
+     * @return monitoring timeline
+     */
     public MonitoringResponse getMonitoring(Long fieldId) {
         List<SatelliteMonitoring> points = monitorings.stream()
                 .filter(m -> m.fieldId().equals(fieldId))
@@ -174,6 +233,12 @@ public class PrototypeDataService {
         return new MonitoringResponse(fieldId, points);
     }
 
+    /**
+     * Calculates livestock pressure ratio and maps it to an advisory status band.
+     *
+     * @param request livestock and grazing area values
+     * @return balance status and guidance
+     */
     public BalanceResponse calculateBalance(BalanceRequest request) {
         double ratio = request.totalLivestockUnits() / request.totalGrazingAreaHa();
         if (ratio <= 1.2) {
@@ -185,10 +250,22 @@ public class PrototypeDataService {
         return new BalanceResponse(ratio, "Overstocked", "Lower stocking rate or increase forage area to reduce land pressure.");
     }
 
+    /**
+     * Lists support programs available in the prototype catalog.
+     *
+     * @return program list
+     */
     public List<GovernmentProgram> getPrograms() {
         return programs;
     }
 
+    /**
+     * Creates a program application after validating farmer and program existence.
+     *
+     * @param farmerId farmer identifier
+     * @param programId program identifier
+     * @return created application record
+     */
     public GovernmentProgramApplication applyToProgram(Long farmerId, Long programId) {
         if (!farmers.containsKey(farmerId)) {
             throw new IllegalArgumentException("Farmer not found");
@@ -205,6 +282,13 @@ public class PrototypeDataService {
         return application;
     }
 
+    /**
+     * Composes a seasonal report from dashboard metrics, recommendations, and yield forecasts.
+     *
+     * @param farmId farm identifier
+     * @param season seasonal label to include in the response
+     * @return seasonal report payload
+     */
     public SeasonalReportResponse getSeasonalReport(Long farmId, String season) {
         DashboardResponse dashboard = getDashboard(farmId);
         RecommendationResponse recommendations = getRecommendations(farmId);
@@ -217,11 +301,20 @@ public class PrototypeDataService {
         return new SeasonalReportResponse(farmId, season, dashboard, recommendations, yieldForecasts);
     }
 
+    /**
+     * Builds a demo-safe token string to mimic authenticated sessions in the prototype.
+     *
+     * @param farmer authenticated farmer
+     * @return mock token string
+     */
     private String buildMockToken(Farmer farmer) {
         String payload = farmer.id() + ":" + farmer.email() + ":" + LocalDate.now();
         return "mock-jwt." + Base64.getUrlEncoder().withoutPadding().encodeToString(payload.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Seeds baseline government program records used by the scheme support workflow.
+     */
     private void seedPrograms() {
         programs.add(new GovernmentProgram(
                 idGenerator.getAndIncrement(),

@@ -12,6 +12,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Integration tests validating key API bootstrap and authentication paths.
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 class SmartFarmApiApplicationTests {
@@ -19,6 +22,11 @@ class SmartFarmApiApplicationTests {
     @Autowired
     private MockMvc mockMvc;
 
+    /**
+     * Verifies the health endpoint is reachable and returns an "ok" status.
+     *
+     * @throws Exception if MockMvc execution fails
+     */
     @Test
     void healthEndpointWorks() throws Exception {
         mockMvc.perform(get("/api/health"))
@@ -26,6 +34,11 @@ class SmartFarmApiApplicationTests {
                 .andExpect(jsonPath("$.status").value("ok"));
     }
 
+    /**
+     * Verifies signup returns a token and echoes the farmer display name.
+     *
+     * @throws Exception if MockMvc execution fails
+     */
     @Test
     void signupReturnsToken() throws Exception {
         String payload = """
