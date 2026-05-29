@@ -12,6 +12,18 @@ SmartFarm is a mobile-first prototype for helping small and new Irish farmers ma
 
 Sign Up → Map Farm → Dashboard → Recommendations → Planning Tools → Scheme Support → Monitoring → Seasonal Reports
 
+## Demo Walkthrough (2-3 minutes)
+
+1. Start backend and frontend from the Quick Start section.
+2. Sign up with any email and continue to Map Farm.
+3. Tap at least 3 points on the map and click "Save & Continue".
+4. On Dashboard, click "Refresh" to load KPIs.
+5. Open Recommendations to show rule-based guidance.
+6. Open Planning Tools and run the Livestock-Land Balance Calculator.
+7. Open Scheme Support and click "Apply" to show a submitted state.
+8. Open Monitoring and click "Load NDVI" to show time-series values.
+9. Open Seasonal Reports and click "Generate".
+
 ## Implemented Features
 
 1. Land Use Mapping (field boundary polygon capture via map taps)
@@ -74,8 +86,21 @@ For Android emulator, API base URL is preconfigured as `http://10.0.2.2:8080/api
 - `POST /api/programs/{programId}/apply?farmerId={farmerId}`
 - `GET /api/reports/seasonal/{farmId}?season=Spring`
 
+## Suggested Screenshot Checklist
+
+- Auth screen (Sign Up/Login)
+- Map Farm screen with boundary points
+- Dashboard KPI cards
+- Recommendations screen
+- Planning Tools calculator result
+- Scheme Support with an "Applied" status
+- Monitoring NDVI timeline
+- Seasonal report summary
+
 ## Notes
 
 - Authentication is prototype-level mock JWT for speed.
 - Data is currently in-memory in backend service for demo purposes.
 - `database/schema.sql` provides normalized tables and PostGIS geometry for production evolution.
+- Program applications and generated records reset if the backend restarts.
+- In web mode, the frontend expects backend at `http://localhost:8080/api`.

@@ -4,16 +4,26 @@ const BASE_URL =
     : 'http://10.0.2.2:8080/api';
 
 async function request(path, options = {}) {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+  let response;
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+      ...options,
+    });
+  } catch (error) {
+    throw new Error(`Cannot reach SmartFarm API at ${BASE_URL}. Start backend with: mvn spring-boot:run`);
+  }
 
   const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (error) {
+    throw new Error('Received an invalid response from the SmartFarm API.');
+  }
 
   if (!response.ok) {
     throw new Error(data?.error || 'Request failed');

@@ -273,6 +273,8 @@ function PlanningToolsScreen() {
 
 function SchemeSupportScreen({ session }) {
   const [programs, setPrograms] = useState([]);
+  const [appliedProgramIds, setAppliedProgramIds] = useState(new Set());
+  const [submittingProgramId, setSubmittingProgramId] = useState(null);
 
   React.useEffect(() => {
     const run = async () => {
@@ -286,11 +288,19 @@ function SchemeSupportScreen({ session }) {
   }, []);
 
   const apply = async (programId) => {
+    if (appliedProgramIds.has(programId)) {
+      return;
+    }
+
     try {
+      setSubmittingProgramId(programId);
       await api.applyProgram(programId, session.farmerId);
+      setAppliedProgramIds((prev) => new Set(prev).add(programId));
       Alert.alert('Application submitted', 'Program application was submitted successfully.');
     } catch (error) {
       Alert.alert('Apply failed', error.message);
+    } finally {
+      setSubmittingProgramId(null);
     }
   };
 
@@ -298,11 +308,25 @@ function SchemeSupportScreen({ session }) {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Scheme Support</Text>
+        <Text style={styles.smallText}>Demo note: submitted applications are stored in memory and reset when the backend restarts.</Text>
         {programs.map((program) => (
           <Card key={program.id} title={program.name}>
             <Text style={styles.listItem}>{program.description}</Text>
             <Text style={styles.smallText}>Eligibility: {program.eligibility}</Text>
-            <Button title="Apply" onPress={() => apply(program.id)} />
+            <Button
+              title={
+                appliedProgramIds.has(program.id)
+                  ? 'Applied'
+                  : submittingProgramId === program.id
+                    ? 'Submitting...'
+                    : 'Apply'
+              }
+              onPress={() => apply(program.id)}
+              type={appliedProgramIds.has(program.id) ? 'secondary' : 'primary'}
+            />
+            {appliedProgramIds.has(program.id) && (
+              <Text style={styles.smallText}>Status: Submitted</Text>
+            )}
           </Card>
         ))}
       </ScrollView>
